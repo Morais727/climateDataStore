@@ -54,7 +54,7 @@ Agora todos os pacotes serão instalados dentro desse ambiente.
 Com o ambiente ativo, instale os pacotes listados em requirements.txt:
 
 ```bash
-pip install -r requirements.txt
+pip install -r utils/requirements.txt
 ```
 
 ## Principais bibliotecas utilizadas:
