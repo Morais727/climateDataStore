@@ -32,12 +32,52 @@ O código do repositório segue um fluxo simples e eficiente:
 3. **Download**: os dados são salvos em um arquivo `.nc` (NetCDF).
 4. **Tratamento**: o arquivo é aberto no Python com `xarray` e convertido para formatos mais fáceis (como `.csv`).
 
-### 📦 Bibliotecas usadas
+## ⚙️ Instalação
 
-- **`cdsapi`** → Cliente oficial para conversar com a API do CDS.
-- **`xarray`** → Manipulação de dados multidimensionais (NetCDF).
-- **`netCDF4`** → Leitura/escrita do formato NetCDF.
-- **`dotenv`** → Para guardar a chave da API de forma segura (em `.env`).
+É altamente recomendável utilizar um **ambiente virtual** para este projeto, garantindo que as dependências fiquem isoladas de outras instalações do sistema.
+
+## Criando ambiente virtual com **pyenv**
+
+Se você já tem o [pyenv](https://github.com/pyenv/pyenv) instalado:
+
+```bash
+# criar ambiente com Python 3.10 (exemplo)
+pyenv virtualenv 3.10.14 climate_env
+
+# ativar o ambiente
+pyenv activate climate_env
+Agora todos os pacotes serão instalados dentro desse ambiente.
+```
+
+## Instalando dependências Python
+
+Com o ambiente ativo, instale os pacotes listados em requirements.txt:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Principais bibliotecas utilizadas:
+
+cdsapi → cliente oficial do Climate Data Store (CDS)
+
+cdo → wrapper Python para o Climate Data Operators
+
+xarray → manipulação de dados climáticos em NetCDF
+
+netCDF4 → suporte para leitura/escrita de arquivos .nc
+
+## Instalando o CDO (Climate Data Operators)
+
+O pacote cdo do Python depende do binário CDO instalado no sistema.
+
+Linux (Ubuntu/Debian)
+
+```bash
+Copiar código
+sudo apt-get update
+sudo apt-get install cdo
+```
 
 ---
 
