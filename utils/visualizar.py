@@ -2,7 +2,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 
 # abrir o arquivo NetCDF/GRIB convertido
-ds = xr.open_dataset("ecmwf/era5_t2m_20250101.nc")
+ds = xr.open_dataset("data/era5_t2m_20250101.nc")
 
 print(ds)
 

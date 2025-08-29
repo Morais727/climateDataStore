@@ -1,0 +1,21 @@
+[feat] → nova funcionalidade
+
+[fix] → correção de bug
+
+[docs] → documentação (README, comentários, etc.)
+
+[style] → formatação, indentação, espaços (sem mudar lógica)
+
+[refactor] → refatoração de código (sem mudar funcionalidade)
+
+[test] → adicionar/ajustar testes
+
+[chore] → tarefas de manutenção (dependências, configs, build)
+
+
+Exemplos práticos
+git commit -m "[feat](data): adicionar suporte ao download diário do ERA5"
+git commit -m "[fix](request): corrigir erro no parâmetro 'dataset' ao enviar requisição"
+git commit -m "[docs](readme): incluir instruções de configuração do .env"
+git commit -m "[refactor](logging): simplificar registro de tempo de execução"
+git commit -m "[chore](gitignore): ignorar arquivos .nc e .csv de saída"
