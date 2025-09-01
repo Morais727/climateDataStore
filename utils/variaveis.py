@@ -1,6 +1,6 @@
 # SELECIONE AS VARIÁVEIS DE INTERESSE
 
-dataset = "derived-era5-land-daily-statistics" # Dataset com valores diários já processados (Média).
+dataset = "reanalysis-era5-land" # "derived-era5-land-daily-statistics" # Dataset com valores diários já processados (Média).
 variaveis = [
                 # # TEMPERATURA
                 # "2m_dewpoint_temperature",
@@ -38,7 +38,7 @@ variaveis = [
                 # # VENTO E PRESSÃO
                 # "10m_u_component_of_wind",
                 # "10m_v_component_of_wind",
-                "surface_pressure",
+                # "surface_pressure",
 
                 # # VEGETAÇÃO E ALBEDO (ALBEDO = CAPACIDADE DE REFLETIR A RADIAÇÃO SOLAR)
                 # "leaf_area_index_high_vegetation",
@@ -49,7 +49,18 @@ variaveis = [
             ]
 ano = "2025" # 1950 - Atual
 mes = ["01"] # 01 - 12
-dia = ["01", "02", "03"] # Selecionar dias de interesse. Verificar mês com 31 dias.
-estatistica_diaria = "daily_mean" # "daily_minimum", "daily_maximum"
-tempo_UTC = "utc-03:00" # Horário de Brasília
-frequencia = "1_hourly" # "3_hourly", "6_hourly"
+dia = ["01"] # Selecionar dias de interesse. Verificar mês com 31 dias.
+horas = [
+            "00:00"]
+        #  "01:00", "02:00",
+        #     "03:00", "04:00", "05:00",
+        #     "06:00", "07:00", "08:00",
+        #     "09:00", "10:00", "11:00",
+        #     "12:00", "13:00", "14:00",
+        #     "15:00", "16:00", "17:00",
+        #     "18:00", "19:00", "20:00",
+        #     "21:00", "22:00", "23:00"
+        # ]
+# estatistica_diaria = "daily_mean" # "daily_minimum", "daily_maximum"
+# tempo_UTC = "utc-03:00" # Horário de Brasília
+# frequencia = "1_hourly" # "3_hourly", "6_hourly"
