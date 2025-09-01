@@ -1,22 +1,33 @@
 import xarray as xr
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
-# abrir o arquivo NetCDF/GRIB convertido
-ds = xr.open_dataset("data/2025/reanalysis-era5-land_skin_temperature_2025-01-01_celsius.nc")
+# === Abrir dataset ===
+ds = xr.open_dataset("data/2025/daily_mean/reanalysis-era5-land_skin_temperature_2025-01-01_daily.nc")
 
-print(ds)
+# Selecionar variável
+t2m = ds["skt_C"]
 
-# selecionar a variável de interesse
-t2m = ds['skt_C']
-print(t2m)
+# === Criar figura com projeção geográfica ===
+fig, ax = plt.subplots(figsize=(10, 8), subplot_kw={"projection": ccrs.PlateCarree()})
 
-# pegar os valores como numpy array
-arr = t2m.values
+# Plotar campo (primeiro timestep)
+t2m.isel(valid_time=0).plot(
+    ax=ax,
+    transform=ccrs.PlateCarree(),  # sistema de coordenadas dos dados
+    cmap="coolwarm",
+    cbar_kwargs={"label": "°C"}
+)
 
-# # acessar um tempo específico (aqui ajustei para 'valid_time')
-# t2m_12utc = t2m.sel(valid_time="2025-01-01T12:00")
-# print(t2m_12utc)
+# === Adicionar camadas de mapa ===
+ax.add_feature(cfeature.COASTLINE, linewidth=1)
+ax.add_feature(cfeature.BORDERS, linewidth=0.8, edgecolor="black")
 
-# plotar o primeiro campo de tempo
-t2m.isel(valid_time=0).plot()
+# === Limitar para o Brasil ===
+ax.set_extent([-74, -34, -33.7, 5.3], crs=ccrs.PlateCarree())
+
+# Título
+plt.title("Temperatura da Superfície (°C) - ERA5-Land\nCom fronteiras do Brasil", fontsize=14)
+
 plt.show()

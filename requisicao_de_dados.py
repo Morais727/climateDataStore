@@ -2,6 +2,7 @@ import os
 import cdsapi
 import zipfile
 import logging
+import subprocess
 import xarray as xr
 from cdo import Cdo
 from datetime import datetime
@@ -30,7 +31,7 @@ request = {
     # "frequency": frequencia,
     "format": "netcdf",
     "download_format": "unarchived",
-    "area": [-19, -48, -23, -43] # [N, W, S, E] Comentando essa linha, obteremos os dados globais.
+    "area": [5.3, -74.0, -33.7, -34.0],  # [N, W, S, E] -> Brasil [N, W, S, E] Comentando essa linha, obteremos os dados globais.
 }
 dias_nome = "_".join(dia)
 mes_nome = "_".join(mes)
@@ -40,7 +41,7 @@ if len(variaveis) > 10:
 
 variaveis_nome = "_".join(variaveis)
 
-output_dir = f"data/{ano}"
+output_dir = f"data/{ano}/hourly"
 os.makedirs(output_dir, exist_ok=True)
 
 target = f"{output_dir}/{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}.nc"
@@ -88,6 +89,12 @@ ds_new = xr.Dataset(new_vars, attrs=ds.attrs)
 # Salva em NetCDF
 output_nc = target.replace(".nc", "_celsius.nc")
 ds_new.to_netcdf(output_nc)
+
+output_daily = f"data/{ano}/daily_mean"
+os.makedirs(output_daily, exist_ok=True)
+
+cmd = f"cdo -daymean -shifttime,-1sec {output_nc} {output_daily}/{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}_daily.nc"
+subprocess.run(cmd, shell=True, check=True)
 
 
 logging.info(f"Fim do processamento")
