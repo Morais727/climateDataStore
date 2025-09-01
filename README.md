@@ -185,6 +185,29 @@ mean_temp = ds["t2m"].mean(dim="time")
 df = ds.to_dataframe().reset_index()
 ```
 
+## 🔄 7. Conversão de dados (NetCDF → CSV)
+
+Embora seja possível converter arquivos `.nc` para `.csv` (com `xarray`, `pandas` ou até com o `cdo`), **na prática isso é inviável para a maioria dos casos**:
+
+- Os arquivos do ERA5 são **muito grandes** (milhões de pontos × milhares de timestamps).
+- Um único mês global em resolução horária pode gerar **bilhões de linhas** ao ser convertido para CSV.
+- O tamanho final do `.csv` pode facilmente passar de **dezenas ou centenas de GB**, tornando o processamento lento e difícil de manipular.
+
+👉 **Por isso, recomenda-se fortemente:**
+
+- Trabalhar diretamente no formato **NetCDF** (com `xarray`) ou em **Zarr** (otimizado para leitura sob demanda).
+- Converter para **CSV** apenas quando for **um ponto específico (lat/lon)** ou um conjunto pequeno de estatísticas (ex: médias regionais, séries temporais em cidades).
+
+### 📌 Exemplo de extração eficiente em Python:
+
+```python
+# Extrair série temporal em um ponto específico
+serie = ds["t2m"].sel(latitude=-23.5, longitude=-46.6, method="nearest")
+
+# Salvar em CSV apenas essa série
+serie.to_dataframe().reset_index().to_csv("sao_paulo_t2m.csv", index=False)
+
+
 ## Data citation
 
 This project uses data from the ERA5-Land dataset provided by the
@@ -196,3 +219,4 @@ When using this data, please cite as:
 Muñoz-Sabater, J. (2019): ERA5-Land hourly data from 1981 to present.
 Copernicus Climate Change Service (C3S) Climate Data Store (CDS).
 DOI: [10.24381/cds.e9c9c792](https://doi.org/10.24381/cds.e9c9c792).
+```

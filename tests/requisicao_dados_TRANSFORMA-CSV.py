@@ -56,7 +56,7 @@ logging.info(f"Fim da requisição")
 logging.info(f"Arquivo salvo em: {target}")
 logging.info(f"Duração total: {duracao}")
 
-logging.info("Início do processamento com CDO")
+logging.info("Início do processamento")
 
 inicio = datetime.now()
 

@@ -56,7 +56,7 @@ logging.info(f"Fim da requisição")
 logging.info(f"Arquivo salvo em: {target}")
 logging.info(f"Duração total: {duracao}")
 
-logging.info("Início do processamento com CDO")
+logging.info("Início do processamento")
 
 inicio = datetime.now()
 
@@ -90,3 +90,6 @@ output_nc = target.replace(".nc", "_celsius.nc")
 ds_new.to_netcdf(output_nc)
 
 
+logging.info(f"Fim do processamento")
+logging.info(f"Duração total: {duracao}")
+logging.info(f"Arquivo NetCDF salvo em: {output_nc}")
