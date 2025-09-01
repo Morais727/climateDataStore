@@ -3,7 +3,7 @@
 dataset = "reanalysis-era5-land" # "derived-era5-land-daily-statistics" # Dataset com valores diários já processados (Média).
 variaveis = [
                 # # TEMPERATURA
-                # "2m_dewpoint_temperature",
+                "2m_dewpoint_temperature",
                 # "2m_temperature",
                 "skin_temperature",
                 # "soil_temperature_level_1",
@@ -49,7 +49,7 @@ variaveis = [
             ]
 ano = "2025" # 1950 - Atual
 mes = ["01"] # 01 - 12
-dia = ["01"] # Selecionar dias de interesse. Verificar mês com 31 dias.
+dia = ["01","02","03","04","05","06","07","08","09","10"] # Selecionar dias de interesse. Verificar mês com 31 dias.
 horas = [
             "00:00", "01:00", "02:00",
             "03:00", "04:00", "05:00",

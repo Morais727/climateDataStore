@@ -4,10 +4,10 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 # === Abrir dataset ===
-ds = xr.open_dataset("data/2025/daily_mean/reanalysis-era5-land_skin_temperature_2025-01-01_daily.nc")
+ds = xr.open_dataset("data/2025/hourly/reanalysis-era5-land_2m_dewpoint_temperature_skin_temperature_2025-01-01_celsius.nc")
 
 # Selecionar variável
-t2m = ds["skt_C"]
+t2m = ds["d2m_C"]
 
 # === Criar figura com projeção geográfica ===
 fig, ax = plt.subplots(figsize=(10, 8), subplot_kw={"projection": ccrs.PlateCarree()})
@@ -25,7 +25,7 @@ ax.add_feature(cfeature.COASTLINE, linewidth=1)
 ax.add_feature(cfeature.BORDERS, linewidth=0.8, edgecolor="black")
 
 # === Limitar para o Brasil ===
-ax.set_extent([-74, -34, -33.7, 5.3], crs=ccrs.PlateCarree())
+ax.set_extent([-74, -34, -33.7, 6], crs=ccrs.PlateCarree())
 
 # Título
 plt.title("Temperatura da Superfície (°C) - ERA5-Land\nCom fronteiras do Brasil", fontsize=14)

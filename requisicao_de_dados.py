@@ -31,8 +31,12 @@ request = {
     # "frequency": frequencia,
     "format": "netcdf",
     "download_format": "unarchived",
-    "area": [5.3, -74.0, -33.7, -34.0],  # [N, W, S, E] -> Brasil [N, W, S, E] Comentando essa linha, obteremos os dados globais.
+    "area": [6, -74.0, -33.7, -34.0],  # -> Brasil [N, W, S, E] Comentando essa linha, obteremos os dados globais.
 }
+
+if len(dia) > 10:
+    dias_nome = dia[:10] + "_etc"
+
 dias_nome = "_".join(dia)
 mes_nome = "_".join(mes)
 
@@ -95,7 +99,6 @@ os.makedirs(output_daily, exist_ok=True)
 
 cmd = f"cdo -daymean -shifttime,-1sec {output_nc} {output_daily}/{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}_daily.nc"
 subprocess.run(cmd, shell=True, check=True)
-
 
 logging.info(f"Fim do processamento")
 logging.info(f"Duração total: {duracao}")
