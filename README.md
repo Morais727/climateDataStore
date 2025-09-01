@@ -219,7 +219,3 @@ When using this data, please cite as:
 Muñoz-Sabater, J. (2019): ERA5-Land hourly data from 1981 to present.
 Copernicus Climate Change Service (C3S) Climate Data Store (CDS).
 DOI: [10.24381/cds.e9c9c792](https://doi.org/10.24381/cds.e9c9c792).
-
-```
-
-```
