@@ -2,9 +2,11 @@ import os
 import cdsapi
 import zipfile
 import logging
+import rioxarray
 import subprocess
 import xarray as xr
 from cdo import Cdo
+import geopandas as gpd
 from datetime import datetime
 from utils.variaveis import variaveis, ano, mes, dia, horas, dataset  # estatistica_diaria, tempo_UTC, frequencia,
 
@@ -100,6 +102,30 @@ os.makedirs(output_daily, exist_ok=True)
 cmd = f"cdo -daymean -shifttime,-1sec {output_nc} {output_daily}/{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}_daily.nc"
 subprocess.run(cmd, shell=True, check=True)
 
+fim = datetime.now()
+duracao = fim - inicio
+
 logging.info(f"Fim do processamento")
 logging.info(f"Duração total: {duracao}")
 logging.info(f"Arquivo NetCDF salvo em: {output_nc}")
+
+# === Ler shapefile do Brasil 2024 ===
+brasil = gpd.read_file("/home/marcos-morais/Documentos/ZETTA/DOCS/BR_Pais_2024/BR_Pais_2024.shp")
+
+# Reprojetar para WGS84 (ERA5 usa EPSG:4326)
+brasil = brasil.to_crs("EPSG:4326")
+
+# === Abrir dataset final (já convertido para Celsius) ===
+ds_final = xr.open_dataset(output_nc)  # ou o arquivo diário, se preferir
+
+# Escrever CRS no NetCDF (ERA5 é latitude/longitude)
+ds_final = ds_final.rio.write_crs("EPSG:4326")
+
+# === Recortar dados usando shapefile do Brasil ===
+ds_brasil = ds_final.rio.clip(brasil.geometry, brasil.crs)
+
+# === Salvar em novo arquivo NetCDF ===
+output_br = output_nc.replace(".nc", "_brasil.nc")
+ds_brasil.to_netcdf(output_br)
+
+logging.info(f"Arquivo recortado para o Brasil salvo em: {output_br}")
