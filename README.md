@@ -209,6 +209,7 @@ Após avaliar as ferramentas, verificou-se que o **xarray é mais flexível, int
 
   - `xarray` funciona diretamente no ecossistema Python, facilitando análises, integrações e automações.
   - `cdo` precisa ser executado manualmente ou via `subprocess`, o que adiciona complexidade ao fluxo.
+  - Existe também o pacote [`cdo.py`](https://code.mpimet.mpg.de/projects/cdo/wiki/Cdo%7Epython), que permite chamar os comandos do CDO diretamente no Python, sem `subprocess`. Porém, essa integração ainda depende de arquivos externos e não é tão natural quanto trabalhar com `xarray` em memória.
 
 - **Fluxo de trabalho:**
 
