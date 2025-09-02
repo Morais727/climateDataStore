@@ -15,9 +15,6 @@ t2m = t2m.rio.write_crs("EPSG:4326")
 # === Ler shapefile do Brasil 2024 (IBGE) ===
 brasil = gpd.read_file("/home/marcos-morais/Documentos/ZETTA/DOCS/BR_Pais_2024/BR_Pais_2024.shp")
 
-# Conferir CRS do shapefile
-print("CRS shapefile:", brasil.crs)   # deve ser EPSG:4674 (SIRGAS 2000)
-
 # Reprojetar shapefile para WGS84 (EPSG:4326), compatível com ERA5
 brasil = brasil.to_crs("EPSG:4326")
 
@@ -41,4 +38,7 @@ ax.add_feature(cfeature.COASTLINE, linewidth=0.8)
 ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor="gray")
 
 plt.title("ERA5-Land – Temperatura 2m (°C)\nRecortado pela fronteira oficial do Brasil (IBGE 2024)", fontsize=14)
-plt.show()
+
+# === Salvar figura ===
+plt.savefig("utils/t2m_brasil.png", dpi=300, bbox_inches="tight")  
+plt.savefig("/home/marcos-morais/Documentos/ZETTA/DOCS/t2m_brasil.png", dpi=300, bbox_inches="tight")
