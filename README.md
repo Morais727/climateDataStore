@@ -187,26 +187,57 @@ df = ds.to_dataframe().reset_index()
 
 ## 🔄 7. Conversão de dados (NetCDF → CSV)
 
-Embora seja possível converter arquivos `.nc` para `.csv` (com `xarray`, `pandas` ou até com o `cdo`), **na prática isso é inviável para a maioria dos casos**:
+É possível converter arquivos `.nc` para `.csv` utilizando ferramentas como `xarray`, `pandas` ou `cdo`.  
+Na prática, essa conversão é viável para **conjuntos pequenos ou médios**, mas **pode se tornar inviável em datasets muito grandes**:
 
-- Os arquivos do ERA5 são **muito grandes** (milhões de pontos × milhares de timestamps).
+- Os arquivos do ERA5 podem ser **enormes** (milhões de pontos × milhares de timestamps).
 - Um único mês global em resolução horária pode gerar **bilhões de linhas** ao ser convertido para CSV.
-- O tamanho final do `.csv` pode facilmente passar de **dezenas ou centenas de GB**, tornando o processamento lento e difícil de manipular.
+- O tamanho final do `.csv` pode facilmente chegar a **dezenas ou centenas de GB**, tornando o processamento lento e difícil de manipular.
 
-👉 **Por isso, recomenda-se fortemente:**
+👉 **Recomendações práticas:**
 
 - Trabalhar diretamente no formato **NetCDF** (com `xarray`) ou em **Zarr** (otimizado para leitura sob demanda).
 - Converter para **CSV** apenas quando for **um ponto específico (lat/lon)** ou um conjunto pequeno de estatísticas (ex: médias regionais, séries temporais em cidades).
 
-### 📌 Exemplo de extração eficiente em Python:
+---
 
-```python
-# Extrair série temporal em um ponto específico
-serie = ds["t2m"].sel(latitude=-23.5, longitude=-46.6, method="nearest")
+### ⚡ Comparação entre `xarray` e `cdo`
 
-# Salvar em CSV apenas essa série
-serie.to_dataframe().reset_index().to_csv("sao_paulo_t2m.csv", index=False)
-```
+Após avaliar as ferramentas, verificou-se que o **xarray é mais flexível, integrado ao Python e mais eficiente** que o `cdo` em tarefas de manipulação e conversão:
+
+- **Integração:**
+
+  - `xarray` funciona diretamente no ecossistema Python, facilitando análises, integrações e automações.
+  - `cdo` precisa ser executado manualmente ou via `subprocess`, o que adiciona complexidade ao fluxo.
+
+- **Fluxo de trabalho:**
+
+  - Com `cdo`, cada variável precisa ser convertida separadamente, exigindo um _merge_ posterior dos arquivos.
+  - Com `xarray`, todas as variáveis podem ser exportadas de uma só vez com **um único comando**.
+
+- **Desempenho (com base nos testes de execução):**
+
+  - `cdo`: levou entre **92 e 104 segundos** para concluir a conversão.
+  - `xarray`: concluiu a mesma tarefa em apenas **14 a 16 segundos**.
+  - Resultado: o `xarray` foi até **7× mais rápido** que o `cdo` no cenário testado.
+
+- **Tamanho dos arquivos resultantes:**
+  - Arquivo **CSV** (`saida_xarray.csv`): **105,3 MB**
+  - Arquivo **NetCDF** (`daily_cdo_celsius.nc`): **14,1 MB**
+  - Ou seja, o **NetCDF é cerca de 7,5× mais compacto**, além de manter metadados e estrutura multidimensional.
+
+📊 **Resumo da comparação:**
+
+| Critério           | xarray (Python)  | cdo (externo)                           |
+| ------------------ | ---------------- | --------------------------------------- |
+| Integração         | Direta no Python | Requer execução externa/subprocess      |
+| Conversão múltipla | Um comando       | Precisa converter variável por variável |
+| Velocidade (teste) | 14–16s           | 92–104s                                 |
+| Eficiência         | Alta             | Baixa                                   |
+| Tamanho CSV        | 105,3 MB         | —                                       |
+| Tamanho NetCDF     | 14,1 MB          | —                                       |
+
+---
 
 ## Data citation
 
