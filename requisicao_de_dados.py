@@ -1,14 +1,11 @@
 import os
+import glob
 import cdsapi
-import zipfile
 import logging
-import rioxarray
 import subprocess
-import xarray as xr
-from cdo import Cdo
-import geopandas as gpd
-from datetime import datetime
-from utils.variaveis import variaveis, ano, mes, dia, horas, dataset  # estatistica_diaria, tempo_UTC, frequencia,
+import pandas as pd
+from datetime import datetime, timedelta
+from utils.variaveis import variaveis, dataset 
 
 logging.basicConfig(
     filename="requisicao.log",
@@ -19,113 +16,198 @@ logging.basicConfig(
 inicio = datetime.now()
 logging.info("Início da requisição")
 
-client = cdsapi.Client()
+def concat_csv_por_ano(data_inicio, data_fim, variaveis):
+    logging.info("Iniciando concatenação de CSVs por ano")
+    if isinstance(data_inicio, str):
+        data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
+    if isinstance(data_fim, str):
+        data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
 
-dataset = dataset
-request = {
-    "variable": variaveis,
-    "year": ano,
-    "month": mes,
-    "day": dia,
-    "time": horas,
-    # "daily_statistic": estatistica_diaria,
-    # "time_zone": tempo_UTC,
-    # "frequency": frequencia,
-    "format": "netcdf",
-    "download_format": "unarchived",
-    "area": [6, -74.0, -33.7, -34.0],  # -> Brasil [N, W, S, E] Comentando essa linha, obteremos os dados globais.
-}
+    ano_de_inicio = data_inicio.year
+    ano_de_fim = data_fim.year
 
-if len(dia) > 10:
-    dias_nome = dia[:10] + "_etc"
+    for ano in range(ano_de_inicio, ano_de_fim + 1):
+        arquivos_csv = glob.glob(f"data/{variaveis[0]}/{ano}/csv/*.csv")
+        if not arquivos_csv:
+            logging.warning(f"Nenhum arquivo CSV encontrado para o ano {ano}")
+            continue
 
-dias_nome = "_".join(dia)
-mes_nome = "_".join(mes)
+        dfs = [pd.read_csv(arquivo) for arquivo in arquivos_csv]
+        df_ano = pd.concat(dfs, ignore_index=True)
+        df_ano['date'] = pd.to_datetime(df_ano['date'])
+        df_ano = df_ano.sort_values('date').reset_index(drop=True)
 
-if len(variaveis) > 10:
-    variaveis_nome = variaveis[:10] + "_etc"
+        output_dir = f"data/{variaveis[0]}/{ano}"
+        os.makedirs(output_dir, exist_ok=True)
+        df_ano.to_csv(f"{output_dir}/all_data_{ano}.csv", index=False)
+        logging.info(f"Concatenação de CSVs concluída para o ano {ano} ({len(df_ano)} registros)")
 
-variaveis_nome = "_".join(variaveis)
+def inicio_fim_nome(lista):
+    if not lista:
+        return ""
+    
+    return f"{lista[0]}_{lista[-1]}"
 
-output_dir = f"data/{ano}/hourly"
-os.makedirs(output_dir, exist_ok=True)
+def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120000):
+    # Converte strings para datetime
+    if isinstance(data_inicio, str):
+        data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
+    if isinstance(data_fim, str):
+        data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
+    
+    # Número de dias (delta)
+    num_dias = (data_fim - data_inicio).days + 1  # +1 para incluir o último dia
+    print(num_dias)
+    # Número de variáveis
+    num_variaveis = len(lista_variaveis)
+    
+    # Calcula total de fields
+    total_fields = num_variaveis * num_dias * 24  # 24 horas fixas
 
-target = f"{output_dir}/{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}.nc"
+    # Verifica se ultrapassa limite
+    ultrapassa = total_fields > limite
+    
+    return {
+                'total_fields': total_fields,
+                'ultrapassa_limite': ultrapassa
+            }
 
-client.retrieve(dataset, request).download(target)
-
-print(f"Arquivo salvo em: {target}")
-
-fim = datetime.now()
-duracao = fim - inicio
-
-logging.info(f"Fim da requisição")
-logging.info(f"Arquivo salvo em: {target}")
-logging.info(f"Duração total: {duracao}")
-
-logging.info("Início do processamento")
-
-inicio = datetime.now()
-
-ds = xr.open_dataset(target)
-
-new_vars = {}
-
-for var in ds.data_vars:
-    da = ds[var]
-    # Verifica se a variável tem atributo "units" = Kelvin
-    if "units" in da.attrs and da.attrs["units"] in ["K", "kelvin", "Kelvin"]:
-        print(f"✔ Convertendo {var} de Kelvin para Celsius")
-
-        # Converte valores
-        da_c = da - 273.15
-
-        # Ajusta atributos
-        da_c.attrs["units"] = "°C"
-        da_c.name = var + "_C"
-
-        new_vars[var + "_C"] = da_c
+def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120000):
+    if isinstance(data_inicio, str):
+        data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
+    if isinstance(data_fim, str):
+        data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
+    
+    resultado = verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite)
+    total_fields = resultado['total_fields']
+    ultrapassa = resultado['ultrapassa_limite']
+    
+    logging.info(f"Verificando intervalo {data_inicio.date()} a {data_fim.date()} com {len(lista_variaveis)} variáveis. Total fields: {total_fields}. Ultrapassa limite? {ultrapassa}")
+    
+    intervalos = []
+    
+    if ultrapassa:
+        max_days_per_request = limite // total_fields
+        if max_days_per_request < 1:
+            raise ValueError("Limite de fields muito baixo para o número de variáveis solicitado.")
+        
+        atual_inicio = data_inicio
+        while atual_inicio <= data_fim:
+            fim_ano = datetime(atual_inicio.year, 12, 31)
+            atual_fim = min(atual_inicio + timedelta(days=max_days_per_request-1), fim_ano, data_fim)
+            intervalos.append((atual_inicio, atual_fim))
+            logging.info(f"Intervalo definido: {atual_inicio.date()} -> {atual_fim.date()}")
+            atual_inicio = atual_fim + timedelta(days=1)
     else:
-        # Mantém variável original
-        new_vars[var] = da
+        intervalos.append((data_inicio, data_fim))
+        logging.info(f"Intervalo dentro do limite: {data_inicio.date()} -> {data_fim.date()}")
+    
+    return intervalos
 
-# Cria novo dataset com variáveis convertidas
-ds_new = xr.Dataset(new_vars, attrs=ds.attrs)
+def gera_anos(inicio, fim):
+    return list(range(inicio, fim))
 
-# Salva em NetCDF
-output_nc = target.replace(".nc", "_celsius.nc")
-ds_new.to_netcdf(output_nc)
+def gera_num(inicio, fim):
+    return [f"{n:02}" for n in range(inicio, fim + 1)]
 
-output_daily = f"data/{ano}/daily_mean"
-os.makedirs(output_daily, exist_ok=True)
+def gerar_horas(inicio, fim=None):
+    if inicio == "dia":
+        return [f"{h:02d}:00" for h in range(24)]
+    
+    if fim is None:
+        raise ValueError("Para gerar intervalo, informe valor inicial e final")
+    
+    # Garante que os valores estejam no formato crescente
+    if inicio <= fim:
+        return [f"{h:02d}:00" for h in range(inicio, fim + 1)]
+    else:
+        return [f"{h:02d}:00" for h in range(inicio, fim - 1, -1)]
 
-cmd = f"cdo -daymean -shifttime,-1sec {output_nc} {output_daily}/{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}_daily.nc"
-subprocess.run(cmd, shell=True, check=True)
+def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
+    logging.info(f"Iniciando requisição: {dataset}, Variáveis: {variaveis}, Ano: {ano}, Mes: {mes}, Dias: {dia}, Horas: {horas[0]}-{horas[-1]}")
+    
+    output_dir_base = f"data/{variaveis[0]}/{ano[0]}"
+    os.makedirs(output_dir_base, exist_ok=True)
 
-fim = datetime.now()
-duracao = fim - inicio
+    client = cdsapi.Client()
+    request = {
+        "variable": variaveis,
+        "year": ano,
+        "month": mes,
+        "day": dia,
+        "time": horas,
+        "data_format": "grib",
+        "download_format": "unarchived",
+        "area": [-18, -52, -23, -47],
+    }
 
-logging.info(f"Fim do processamento")
-logging.info(f"Duração total: {duracao}")
-logging.info(f"Arquivo NetCDF salvo em: {output_nc}")
+    dias_nome = inicio_fim_nome(dia)
+    mes_nome = inicio_fim_nome(mes)
+    variaveis_nome = inicio_fim_nome(variaveis)
+    variaveis_nome = variaveis_nome.replace("-", "_")
 
-# === Ler shapefile do Brasil 2024 ===
-brasil = gpd.read_file("/home/marcos-morais/Documentos/ZETTA/DOCS/BR_Pais_2024/BR_Pais_2024.shp")
+    output_hourly = f"{output_dir_base}/hourly"
+    os.makedirs(output_hourly, exist_ok=True)
 
-# Reprojetar para WGS84 (ERA5 usa EPSG:4326)
-brasil = brasil.to_crs("EPSG:4326")
+    nome_base = f'{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}'
+    target = f"{output_hourly}/{nome_base}.grib"
 
-# === Abrir dataset final (já convertido para Celsius) ===
-ds_final = xr.open_dataset(output_nc)  # ou o arquivo diário, se preferir
+    logging.info(f"Baixando arquivo: {target}")
+    client.retrieve(dataset, request).download(target)
+    logging.info("Download concluído")
 
-# Escrever CRS no NetCDF (ERA5 é latitude/longitude)
-ds_final = ds_final.rio.write_crs("EPSG:4326")
+    output_celsius = f"{output_hourly}/{nome_base}_celsius.grib"
+    resultado = subprocess.run(["cdo", "showname", f"{target}"], capture_output=True, text=True)
+    variaveis_arq = resultado.stdout.splitlines()
 
-# === Recortar dados usando shapefile do Brasil ===
-ds_brasil = ds_final.rio.clip(brasil.geometry, brasil.crs)
+    nova_var = f'{variaveis_arq[0]}_C'
+    expr = f'{nova_var}={variaveis_arq[0]}-273.15'
+    cmd_convert = f"cdo expr,'{expr}' {target} {output_celsius}"
+    subprocess.run(cmd_convert, shell=True, check=True)
+    logging.info(f"Conversão para Celsius concluída: {nova_var}")
 
-# === Salvar em novo arquivo NetCDF ===
-output_br = output_nc.replace(".nc", "_brasil.nc")
-ds_brasil.to_netcdf(output_br)
+    cmd_units = f"cdo -setattribute,{nova_var}@units=degC {output_celsius} {output_celsius}"
+    subprocess.run(cmd_units, shell=True, check=True)
 
-logging.info(f"Arquivo recortado para o Brasil salvo em: {output_br}")
+    output_daily = f'{output_dir_base}/daily_mean'
+    os.makedirs(output_daily, exist_ok=True)
+    cmd_daymean = f"cdo -daymean -shifttime,-1sec {output_celsius} {output_daily}/{nome_base}_daily.grib"
+    subprocess.run(cmd_daymean, shell=True, check=True)
+    logging.info("Cálculo daily mean concluído")
+
+    output_csv = f'{output_dir_base}/csv'
+    os.makedirs(output_csv, exist_ok=True)
+    cmd_outputtab = f"cdo outputtab,date,lon,lat,value {output_daily}/{nome_base}_daily.grib | sed '2d' > {output_csv}/{nome_base}_daily.csv"
+    subprocess.run(cmd_outputtab, shell=True, check=True)
+    logging.info(f"Arquivo CSV gerado: {output_csv}/{nome_base}_daily.csv")
+
+def main():
+    logging.info("Início do script")
+    data_inicio = "2024-01-01"
+    data_fim = "2025-06-01"
+
+    intervalos = dividir_requisicao(data_inicio, data_fim, variaveis)
+    for inicio, fim in intervalos:
+        dia_inicio = inicio.day
+        mes_inicio = inicio.month
+        ano_inicio = inicio.year
+        
+        dia_fim = fim.day
+        mes_fim = fim.month
+        ano_fim = fim.year
+
+        dia = gera_num(1, 31)
+        mes = gera_num(mes_inicio, mes_fim)
+        horas = gerar_horas("dia")
+        ano = gera_anos(ano_inicio, ano_fim)
+
+        faz_requisicao(variaveis, dia, mes, ano, horas)
+
+    concat_csv_por_ano(data_inicio, data_fim, variaveis)
+    logging.info("Fim do script")
+
+
+
+if __name__ == "__main__":
+    main()
+    
