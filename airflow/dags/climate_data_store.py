@@ -3,21 +3,21 @@ from __future__ import annotations
 import pendulum
 
 from airflow.models.dag import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.dummy import DummyOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 
 with DAG(
-    dag_id="exemplo_dag_gerenciamento",
-    schedule="0 8 * * *",  # Executa todos os dias às 8h da manhã
+    dag_id="exemplo_dag_gerenciamento_requisicoes_dados",
+    schedule=None,  
     start_date=pendulum.datetime(2025, 1, 1, tz="UTC"),
     catchup=False,
     tags=["exemplo", "dados"],
 ) as dag:
     
     # Task 1: Início do fluxo de trabalho
-    start = DummyOperator(
-        task_id="inicio",
-    )
+    start = EmptyOperator(
+    task_id="inicio",
+)
 
     # Task 2: Executa um script ou comando
     processar_dados = BashOperator(
@@ -32,7 +32,7 @@ with DAG(
     )
 
     # Task 4: Fim do fluxo de trabalho
-    fim = DummyOperator(
+    fim = EmptyOperator(
         task_id="fim",
     )
 

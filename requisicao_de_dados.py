@@ -55,10 +55,9 @@ def concat_csv_por_ano(data_inicio, data_fim, variaveis):
 def inicio_fim_nome(lista):
     if not lista:
         return ""
-    
     return f"{lista[0]}_{lista[-1]}"
 
-def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120000):
+def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120_000):
     if isinstance(data_inicio, str):
         data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
     if isinstance(data_fim, str):
@@ -76,7 +75,7 @@ def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120000
                 'ultrapassa_limite': ultrapassa
             }
 
-def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120000):
+def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120_000):
     if isinstance(data_inicio, str):
         data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
     if isinstance(data_fim, str):
