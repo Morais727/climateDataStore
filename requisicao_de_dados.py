@@ -57,7 +57,6 @@ def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120000
     
     # Número de dias (delta)
     num_dias = (data_fim - data_inicio).days + 1  # +1 para incluir o último dia
-    print(num_dias)
     # Número de variáveis
     num_variaveis = len(lista_variaveis)
     
@@ -82,11 +81,10 @@ def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120000):
     total_fields = resultado['total_fields']
     ultrapassa = resultado['ultrapassa_limite']
     
-    logging.info(f"Verificando intervalo {data_inicio.date()} a {data_fim.date()} com {len(lista_variaveis)} variáveis. Total fields: {total_fields}. Ultrapassa limite? {ultrapassa}")
-    
     intervalos = []
     
     if ultrapassa:
+        # Mantemos divisão por max_days_per_request
         max_days_per_request = limite // total_fields
         if max_days_per_request < 1:
             raise ValueError("Limite de fields muito baixo para o número de variáveis solicitado.")
@@ -96,11 +94,25 @@ def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120000):
             fim_ano = datetime(atual_inicio.year, 12, 31)
             atual_fim = min(atual_inicio + timedelta(days=max_days_per_request-1), fim_ano, data_fim)
             intervalos.append((atual_inicio, atual_fim))
-            logging.info(f"Intervalo definido: {atual_inicio.date()} -> {atual_fim.date()}")
+            logging.info(f"Intervalo definido (ultrapassa limite): {atual_inicio.date()} -> {atual_fim.date()}")
             atual_inicio = atual_fim + timedelta(days=1)
+    
+    elif data_inicio.year != data_fim.year:
+        # Se não ultrapassa, mas intervalos cruzam anos
+        # Intervalo até fim do ano inicial
+        fim_ano = datetime(data_inicio.year, 12, 31)
+        intervalos.append((data_inicio, fim_ano))
+        logging.info(f"Intervalo até fim do ano inicial: {data_inicio.date()} -> {fim_ano.date()}")
+        
+        # Intervalo do primeiro dia do ano seguinte até data_fim
+        inicio_proximo_ano = datetime(data_fim.year, 1, 1)
+        intervalos.append((inicio_proximo_ano, data_fim))
+        logging.info(f"Intervalo ano seguinte: {inicio_proximo_ano.date()} -> {data_fim.date()}")
+    
     else:
+        # Se não ultrapassa e está dentro do mesmo ano
         intervalos.append((data_inicio, data_fim))
-        logging.info(f"Intervalo dentro do limite: {data_inicio.date()} -> {data_fim.date()}")
+        logging.info(f"Intervalo dentro do mesmo ano e limite: {data_inicio.date()} -> {data_fim.date()}")
     
     return intervalos
 
@@ -124,9 +136,9 @@ def gerar_horas(inicio, fim=None):
         return [f"{h:02d}:00" for h in range(inicio, fim - 1, -1)]
 
 def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
-    logging.info(f"Iniciando requisição: {dataset}, Variáveis: {variaveis}, Ano: {ano}, Mes: {mes}, Dias: {dia}, Horas: {horas[0]}-{horas[-1]}")
+    logging.info(f"Iniciando requisição: {dataset}, Variáveis: {variaveis}, Ano: {ano}, Mes: {mes[0]}-{mes[-1]}, Dias: {dia[0]}-{dia[-1]}, Horas: {horas[0]}-{horas[-1]}")
     
-    output_dir_base = f"data/{variaveis[0]}/{ano[0]}"
+    output_dir_base = f"data/{variaveis[0]}/{ano}"
     os.makedirs(output_dir_base, exist_ok=True)
 
     client = cdsapi.Client()
@@ -181,12 +193,11 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
     subprocess.run(cmd_outputtab, shell=True, check=True)
     logging.info(f"Arquivo CSV gerado: {output_csv}/{nome_base}_daily.csv")
 
-def main():
+def main(data_inicio, data_fim):
     logging.info("Início do script")
-    data_inicio = "2024-01-01"
-    data_fim = "2025-06-01"
-
+    
     intervalos = dividir_requisicao(data_inicio, data_fim, variaveis)
+    print(intervalos)
     for inicio, fim in intervalos:
         dia_inicio = inicio.day
         mes_inicio = inicio.month
@@ -199,15 +210,15 @@ def main():
         dia = gera_num(1, 31)
         mes = gera_num(mes_inicio, mes_fim)
         horas = gerar_horas("dia")
-        ano = gera_anos(ano_inicio, ano_fim)
+        ano = ano_inicio
 
         faz_requisicao(variaveis, dia, mes, ano, horas)
 
     concat_csv_por_ano(data_inicio, data_fim, variaveis)
     logging.info("Fim do script")
 
-
-
 if __name__ == "__main__":
-    main()
-    
+    data_inicio = "2024-01-01"
+    data_fim = "2025-06-01"
+
+    main(data_inicio, data_fim)
