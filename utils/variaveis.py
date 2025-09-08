@@ -1,9 +1,8 @@
 # SELECIONE AS VARIÁVEIS DE INTERESSE
 
 dataset = "reanalysis-era5-land" 
-variaveis = [
-                #"2m_dewpoint_temperature",
-                "2m_temperature",
+variaveis = ["2m_temperature",
+                #"2m_dewpoint_temperature",                
                 # "skin_temperature",
                 # "soil_temperature_level_1",
                 # "soil_temperature_level_2",

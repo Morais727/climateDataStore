@@ -84,7 +84,6 @@ def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120000):
     intervalos = []
     
     if ultrapassa:
-        # Mantemos divisão por max_days_per_request
         max_days_per_request = limite // total_fields
         if max_days_per_request < 1:
             raise ValueError("Limite de fields muito baixo para o número de variáveis solicitado.")
@@ -98,19 +97,15 @@ def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120000):
             atual_inicio = atual_fim + timedelta(days=1)
     
     elif data_inicio.year != data_fim.year:
-        # Se não ultrapassa, mas intervalos cruzam anos
-        # Intervalo até fim do ano inicial
         fim_ano = datetime(data_inicio.year, 12, 31)
         intervalos.append((data_inicio, fim_ano))
         logging.info(f"Intervalo até fim do ano inicial: {data_inicio.date()} -> {fim_ano.date()}")
         
-        # Intervalo do primeiro dia do ano seguinte até data_fim
         inicio_proximo_ano = datetime(data_fim.year, 1, 1)
         intervalos.append((inicio_proximo_ano, data_fim))
         logging.info(f"Intervalo ano seguinte: {inicio_proximo_ano.date()} -> {data_fim.date()}")
     
     else:
-        # Se não ultrapassa e está dentro do mesmo ano
         intervalos.append((data_inicio, data_fim))
         logging.info(f"Intervalo dentro do mesmo ano e limite: {data_inicio.date()} -> {data_fim.date()}")
     
@@ -155,43 +150,48 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
 
     dias_nome = inicio_fim_nome(dia)
     mes_nome = inicio_fim_nome(mes)
-    variaveis_nome = inicio_fim_nome(variaveis)
-    variaveis_nome = variaveis_nome.replace("-", "_")
-
+    variaveis_nome = variaveis[0].replace("-", "_")
+    dataset_nome = dataset.replace("-", "_")
     output_hourly = f"{output_dir_base}/hourly"
     os.makedirs(output_hourly, exist_ok=True)
 
-    nome_base = f'{dataset}_{variaveis_nome}_{ano}-{mes_nome}-{dias_nome}'
+    nome_base = f'{dataset_nome}-{variaveis_nome}-{ano}-{mes_nome}-{dias_nome}'
     target = f"{output_hourly}/{nome_base}.grib"
 
     logging.info(f"Baixando arquivo: {target}")
     client.retrieve(dataset, request).download(target)
     logging.info("Download concluído")
 
-    output_celsius = f"{output_hourly}/{nome_base}_celsius.grib"
+    output_celsius = f"{output_hourly}/{nome_base}-celsius.grib"
     resultado = subprocess.run(["cdo", "showname", f"{target}"], capture_output=True, text=True)
-    variaveis_arq = resultado.stdout.splitlines()
+    variaveis_arq = [v.strip() for v in resultado.stdout.splitlines() if v.strip()]
 
-    nova_var = f'{variaveis_arq[0]}_C'
-    expr = f'{nova_var}={variaveis_arq[0]}-273.15'
+    expr = f'{variaveis_arq[0]}={variaveis_arq[0]}-273.15'
     cmd_convert = f"cdo expr,'{expr}' {target} {output_celsius}"
     subprocess.run(cmd_convert, shell=True, check=True)
-    logging.info(f"Conversão para Celsius concluída: {nova_var}")
-
-    cmd_units = f"cdo -setattribute,{nova_var}@units=degC {output_celsius} {output_celsius}"
+    logging.info(f"Conversão para Celsius concluída:{variaveis_arq[0]}")
+    input_celsius = output_celsius
+    output_celsius = output_celsius.replace("celsius.grib", "celsius-units.grib")
+    cmd_units = f"cdo -setattribute,{variaveis_arq[0]}@units=degC {input_celsius} {output_celsius}"
     subprocess.run(cmd_units, shell=True, check=True)
 
     output_daily = f'{output_dir_base}/daily_mean'
     os.makedirs(output_daily, exist_ok=True)
-    cmd_daymean = f"cdo -daymean -shifttime,-1sec {output_celsius} {output_daily}/{nome_base}_daily.grib"
+    cmd_daymean = f"cdo -daymean -shifttime,-1sec {output_celsius} {output_daily}/{nome_base}-daily.grib"
     subprocess.run(cmd_daymean, shell=True, check=True)
     logging.info("Cálculo daily mean concluído")
 
     output_csv = f'{output_dir_base}/csv'
     os.makedirs(output_csv, exist_ok=True)
-    cmd_outputtab = f"cdo outputtab,date,lon,lat,value {output_daily}/{nome_base}_daily.grib | sed '2d' > {output_csv}/{nome_base}_daily.csv"
+    cmd_outputtab = (
+                        f"cdo outputtab,date,lon,lat,value "
+                        f"{output_daily}/{nome_base}-daily.grib | tr -s ' ' ',' > "
+                        f"{output_csv}/{nome_base}-daily.csv"
+                    )
+
+
     subprocess.run(cmd_outputtab, shell=True, check=True)
-    logging.info(f"Arquivo CSV gerado: {output_csv}/{nome_base}_daily.csv")
+    logging.info(f"Arquivo CSV gerado: {output_csv}/{nome_base}-daily.csv")
 
 def main(data_inicio, data_fim):
     logging.info("Início do script")
