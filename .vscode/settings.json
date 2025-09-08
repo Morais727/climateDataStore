@@ -1,4 +1,6 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:pyenv",
-    "python-envs.pythonProjects": []
+    "python-envs.pythonProjects": [],
+    "python.defaultInterpreterPath": "/home/marcos-morais/.pyenv/versions/climateData_311/bin/python"
+
 }

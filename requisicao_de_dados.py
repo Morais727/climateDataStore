@@ -202,7 +202,6 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
     corrig_csv(arq_entrada, colunas)
     logging.info(f"Arquivo CSV corrigido")
 
-
 def main(data_inicio, data_fim):
     logging.info("Início do script")
     
