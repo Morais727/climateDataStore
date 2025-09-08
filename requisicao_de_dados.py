@@ -48,6 +48,10 @@ def concat_csv_por_ano(data_inicio, data_fim, variaveis):
         df_ano.to_csv(f"{output_dir}/all_data_{ano}.csv", index=False)
         logging.info(f"Concatenação de CSVs concluída para o ano {ano} ({len(df_ano)} registros)")
 
+        arq_entrada = f"{output_dir}/all_data_{ano}.csv"
+        colunas = ['#', 'Unnamed: 5']
+        corrig_csv(arq_entrada, colunas)
+
 def inicio_fim_nome(lista):
     if not lista:
         return ""
@@ -55,21 +59,16 @@ def inicio_fim_nome(lista):
     return f"{lista[0]}_{lista[-1]}"
 
 def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120000):
-    # Converte strings para datetime
     if isinstance(data_inicio, str):
         data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
     if isinstance(data_fim, str):
         data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
     
-    # Número de dias (delta)
     num_dias = (data_fim - data_inicio).days + 1  # +1 para incluir o último dia
-    # Número de variáveis
     num_variaveis = len(lista_variaveis)
     
-    # Calcula total de fields
     total_fields = num_variaveis * num_dias * 24  # 24 horas fixas
 
-    # Verifica se ultrapassa limite
     ultrapassa = total_fields > limite
     
     return {
@@ -130,7 +129,6 @@ def gerar_horas(inicio, fim=None):
     if fim is None:
         raise ValueError("Para gerar intervalo, informe valor inicial e final")
     
-    # Garante que os valores estejam no formato crescente
     if inicio <= fim:
         return [f"{h:02d}:00" for h in range(inicio, fim + 1)]
     else:
@@ -227,6 +225,7 @@ def main(data_inicio, data_fim):
         faz_requisicao(variaveis, dia, mes, ano, horas)
 
     concat_csv_por_ano(data_inicio, data_fim, variaveis)
+
     logging.info("Fim do script")
 
 if __name__ == "__main__":
