@@ -16,6 +16,12 @@ logging.basicConfig(
 inicio = datetime.now()
 logging.info("Início da requisição")
 
+def corrig_csv(arquino, colunas):
+    df = pd.read_csv(arquino)
+    df = df.drop(columns=colunas, errors='ignore')
+    df.to_csv(arquino, index=False)  
+    return df
+
 def concat_csv_por_ano(data_inicio, data_fim, variaveis):
     logging.info("Iniciando concatenação de CSVs por ano")
     if isinstance(data_inicio, str):
@@ -192,6 +198,12 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
 
     subprocess.run(cmd_outputtab, shell=True, check=True)
     logging.info(f"Arquivo CSV gerado: {output_csv}/{nome_base}-daily.csv")
+
+    arq_entrada = f"{output_csv}/{nome_base}-daily.csv"
+    colunas = ['#', 'Unnamed: 5']
+    corrig_csv(arq_entrada, colunas)
+    logging.info(f"Arquivo CSV corrigido")
+
 
 def main(data_inicio, data_fim):
     logging.info("Início do script")
