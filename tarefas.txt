@@ -1,0 +1,1 @@
+pegar datasets do discord e baixar os dados de precipitação máx méd e mín 

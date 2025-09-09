@@ -1,9 +1,13 @@
-from dividir_requisicao import dividir_requisicao
+import json 
+import argparse
 from basicos import gera_num, gerar_horas
 from faz_requisicao import faz_requisicao
+from dividir_requisicao import dividir_requisicao
 
 def main(data_inicio, data_fim, dataset, variaveis, area):
     intervalos = dividir_requisicao(data_inicio, data_fim, variaveis)
+
+    arq_caminhos = []
     for inicio, fim in intervalos:
         mes_inicio = inicio.month
         ano_inicio = inicio.year
@@ -15,14 +19,23 @@ def main(data_inicio, data_fim, dataset, variaveis, area):
         horas = gerar_horas("dia")
         ano = ano_inicio
 
-        faz_requisicao(variaveis, dia, mes, ano, horas, dataset, area)
+        arq_resultado = faz_requisicao(variaveis, dia, mes, ano, horas, dataset, area)
+        arq_caminhos.append(arq_resultado)
+
+    return arq_caminhos
 
 if __name__ == "__main__":
-    data_inicio = "2024-01-01"
-    data_fim = "2025-06-01"
+    parser = argparse.ArgumentParser(description="Script para requisitar dados climáticos do ERA5.")
 
-    dataset = "reanalysis-era5-land" 
-    variaveis = ["2m_temperature"]
-    area = [-18, -52, -23, -47]
+    parser.add_argument("--data_inicio", type=str, required=True, default="2024-01-01", help="Data de início da requisição (YYYY-MM-DD)")
+    parser.add_argument("--data_fim", type=str, required=True, default="2024-01-01", help="Data de fim da requisição (YYYY-MM-DD)")
+    parser.add_argument("--dataset", type=str, required=True, default="reanalysis-era5-land", help="Nome do dataset")
+    parser.add_argument("--variaveis", type=str, required=True, default='["2m_temperature"]', help="Lista de variáveis em formato JSON")
+    parser.add_argument("--area", type=str, required=False, default="None", help="Área geográfica em formato JSON")
 
-    main(data_inicio, data_fim, dataset, variaveis, area)
+    args = parser.parse_args()
+
+    variaveis = json.loads(args.variaveis)
+    area = json.loads(args.area)
+
+    main(args.data_inicio, args.data_fim, args.dataset, variaveis, area)

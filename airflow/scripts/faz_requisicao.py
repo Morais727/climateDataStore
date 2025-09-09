@@ -29,3 +29,5 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset, area):
     target = f"{output_hourly}/{nome_base}.grib"
 
     client.retrieve(dataset, request).download(target)
+
+    return target

@@ -164,25 +164,57 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
     logging.info(f"Baixando arquivo: {target}")
     client.retrieve(dataset, request).download(target)
     logging.info("Download concluído")
-
-    output_celsius = f"{output_hourly}/{nome_base}-celsius.grib"
+    
+    
+    
+    
+    if variaveis[0] == "2m_temperature":
+        medida = "celsius"
+        unidade = "degC"
+    elif variaveis[0] == "total_precipitation":
+        medida = "milimetros"
+        unidade = "mm"
+    
+    output_medida = f"{output_hourly}/{nome_base}-{medida}.grib"
     resultado = subprocess.run(["cdo", "showname", f"{target}"], capture_output=True, text=True)
     variaveis_arq = [v.strip() for v in resultado.stdout.splitlines() if v.strip()]
 
-    expr = f'{variaveis_arq[0]}={variaveis_arq[0]}-273.15'
-    cmd_convert = f"cdo expr,'{expr}' {target} {output_celsius}"
-    subprocess.run(cmd_convert, shell=True, check=True)
-    logging.info(f"Conversão para Celsius concluída:{variaveis_arq[0]}")
-    input_celsius = output_celsius
-    output_celsius = output_celsius.replace("celsius.grib", "celsius-units.grib")
-    cmd_units = f"cdo -setattribute,{variaveis_arq[0]}@units=degC {input_celsius} {output_celsius}"
+    
+    if variaveis[0] == "2m_temperature":
+        expr = f'{variaveis_arq[0]}={variaveis_arq[0]}-273.15'
+        cmd_convert = f"cdo expr,'{expr}' {target} {output_medida}"
+        subprocess.run(cmd_convert, shell=True, check=True)
+        logging.info(f"Conversão para Celsius concluída:{variaveis_arq[0]}")
+    elif variaveis[0] == "total_precipitation":
+        expr = f'{variaveis_arq[0]}={variaveis_arq[0]}*1000'
+        cmd_convert = f"cdo expr,'{expr}' {target} {output_medida}"
+        subprocess.run(cmd_convert, shell=True, check=True)
+        logging.info(f"Conversão para milímetros concluída: {variaveis_arq[0]}")
+
+    input_medida = output_medida
+    output_medida = output_medida.replace(f"{medida}.grib", f"{medida}-units.grib")
+    cmd_units = f"cdo -setattribute,{variaveis_arq[0]}@units={unidade} {input_medida} {output_medida}"
     subprocess.run(cmd_units, shell=True, check=True)
 
-    output_daily = f'{output_dir_base}/daily_mean'
+    output_daily = f'{output_dir_base}/daily'
     os.makedirs(output_daily, exist_ok=True)
-    cmd_daymean = f"cdo -daymean -shifttime,-1sec {output_celsius} {output_daily}/{nome_base}-daily.grib"
-    subprocess.run(cmd_daymean, shell=True, check=True)
-    logging.info("Cálculo daily mean concluído")
+
+    if variaveis[0] == "2m_temperature":
+        cmd_daymean = f"cdo -daymean -shifttime,-1sec {output_medida} {output_daily}/{nome_base}-daily.grib"
+        subprocess.run(cmd_daymean, shell=True, check=True)
+        logging.info("Cálculo daily mean concluído")
+    elif variaveis[0] == "total_precipitation":
+        cmd_daymax = f"cdo daymax {output_medida} {output_daily}/{nome_base}-daily-max.grib"
+        subprocess.run(cmd_daymax, shell=True, check=True)
+        logging.info("Cálculo daily max concluído")
+
+        cmd_daymin = f"cdo daymin {output_medida} {output_daily}/{nome_base}-daily-min.grib"
+        subprocess.run(cmd_daymin, shell=True, check=True)
+        logging.info("Cálculo daily min concluído")
+
+        cmd_daymean_merge = f"cdo daymean -mergetime {output_medida} {output_daily}/{nome_base}-daily.grib"
+        subprocess.run(cmd_daymean_merge, shell=True, check=True)
+        logging.info("Cálculo daily mean concluído")
 
     output_csv = f'{output_dir_base}/csv'
     os.makedirs(output_csv, exist_ok=True)
@@ -205,7 +237,6 @@ def main(data_inicio, data_fim):
     logging.info("Início do script")
     
     intervalos = dividir_requisicao(data_inicio, data_fim, variaveis)
-    print(intervalos)
     for inicio, fim in intervalos:
         dia_inicio = inicio.day
         mes_inicio = inicio.month

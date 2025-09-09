@@ -1,7 +1,8 @@
 # SELECIONE AS VARIÁVEIS DE INTERESSE
 
 dataset = "reanalysis-era5-land" 
-variaveis = ["2m_temperature",
+variaveis = [
+                #"2m_temperature",
                 #"2m_dewpoint_temperature",                
                 # "skin_temperature",
                 # "soil_temperature_level_1",
@@ -43,7 +44,7 @@ variaveis = ["2m_temperature",
                 # "10m_u_component_of_wind",
                 # "10m_v_component_of_wind",
                 # "surface_pressure",
-                # "total_precipitation",
+                "total_precipitation",
                 # "leaf_area_index_high_vegetation",
                 # "leaf_area_index_low_vegetation",
                 # "high_vegetation_cover",
