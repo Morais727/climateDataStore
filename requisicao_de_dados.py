@@ -141,6 +141,7 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
 
     client = cdsapi.Client()
     request = {
+        "product_type": ["reanalysis"],
         "variable": variaveis,
         "year": ano,
         "month": mes,
@@ -186,8 +187,9 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
         subprocess.run(cmd_convert, shell=True, check=True)
         logging.info(f"Conversão para Celsius concluída:{variaveis_arq[0]}")
     elif variaveis[0] == "total_precipitation":
-        expr = f'{variaveis_arq[0]}={variaveis_arq[0]}*1000'
-        cmd_convert = f"cdo expr,'{expr}' {target} {output_medida}"
+        # expr = f'{variaveis_arq[0]}={variaveis_arq[0]}*1000'
+        # cmd_convert = f"cdo expr,'{expr}' {target} {output_medida}"
+        cmd_convert = f"cdo mulc,1000 {target} {output_medida}"
         subprocess.run(cmd_convert, shell=True, check=True)
         logging.info(f"Conversão para milímetros concluída: {variaveis_arq[0]}")
 
@@ -212,9 +214,9 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
         subprocess.run(cmd_daymin, shell=True, check=True)
         logging.info("Cálculo daily min concluído")
 
-        cmd_daymean_merge = f"cdo daymean -mergetime {output_medida} {output_daily}/{nome_base}-daily.grib"
-        subprocess.run(cmd_daymean_merge, shell=True, check=True)
-        logging.info("Cálculo daily mean concluído")
+        # cmd_daymean_merge = f"cdo daymean -mergetime {output_medida} {output_daily}/{nome_base}-daily.grib"
+        # subprocess.run(cmd_daymean_merge, shell=True, check=True)
+        # logging.info("Cálculo daily mean concluído")
 
     output_csv = f'{output_dir_base}/csv'
     os.makedirs(output_csv, exist_ok=True)

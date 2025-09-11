@@ -1,1 +1,21 @@
 pegar datasets do discord e baixar os dados de precipitação máx méd e mín 
+
+
+
+cdo daymin input.grib output.grib
+cdo daymax input.grib output.grib
+cdo daymean -mergetime input_1.grib input_2.grib output.grib
+
+
+
+
+
+cdo -f nc -selcircle,lon=-50.900466,lat=-21.164700,radius=1deg input.grib saida_circulo.nc
+
+cdo outputtab,date,lon,lat,value input.nc | tr -s ' ' ',' > maneira_burra/usa_cdo/2m_temperature/reanalysis_era5_land-2m_temperature-2024-01_12-01_31-celsius-units-daymean-box.csv
+
+
+
+
+
+cdo -f nc -selcircle,lon=-50.900466,lat=-21.164700,radius=1deg maneira_burra/usa_cdo/2m_temperature/reanalysis_era5_land-2m_temperature-2024-01_12-01_31-celsius-units-daymin.grib maneira_burra/usa_cdo/2m_temperature/reanalysis_era5_land-2m_temperature-2024-01_12-01_31-celsius-units-daymin-circle.nc
