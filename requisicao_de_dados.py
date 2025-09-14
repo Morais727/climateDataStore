@@ -149,7 +149,8 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
         "time": horas,
         "data_format": "grib",
         "download_format": "unarchived",
-        "area": [-18, -52, -23, -47],
+        "area" : [-34.8, -73.9, 5.3, -34.8]  # [lat_min, lon_min, lat_max, lon_max]
+# "area": [-18, -52, -23, -47],
     }
 
     dias_nome = inicio_fim_nome(dia)

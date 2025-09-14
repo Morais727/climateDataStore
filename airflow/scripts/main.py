@@ -1,3 +1,4 @@
+import itertools
 import json 
 import argparse
 from basicos import gera_num, gerar_horas
@@ -11,16 +12,17 @@ def main(data_inicio, data_fim, dataset, variaveis, area):
     for inicio, fim in intervalos:
         mes_inicio = inicio.month
         ano_inicio = inicio.year
-        
         mes_fim = fim.month
-
+        
         dia = gera_num(1, 31)
         mes = gera_num(mes_inicio, mes_fim)
         horas = gerar_horas("dia")
         ano = ano_inicio
 
-        arq_resultado = faz_requisicao(variaveis, dia, mes, ano, horas, dataset, area)
-        arq_caminhos.append(arq_resultado)
+        # Produto cartesiano entre variáveis e datasets
+        for var, ds in itertools.product(variaveis, dataset):
+            arq_resultado = faz_requisicao(var, dia, mes, ano, horas, ds, area)
+            arq_caminhos.append(arq_resultado)
 
     return arq_caminhos
 

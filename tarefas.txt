@@ -19,3 +19,11 @@ cdo outputtab,date,lon,lat,value input.nc | tr -s ' ' ',' > maneira_burra/usa_cd
 
 
 cdo -f nc -selcircle,lon=-50.900466,lat=-21.164700,radius=1deg maneira_burra/usa_cdo/2m_temperature/reanalysis_era5_land-2m_temperature-2024-01_12-01_31-celsius-units-daymin.grib maneira_burra/usa_cdo/2m_temperature/reanalysis_era5_land-2m_temperature-2024-01_12-01_31-celsius-units-daymin-circle.nc
+
+
+
+
+
+
+
+criar código para pegar o ponto mais próximo do ponto de interesse.
