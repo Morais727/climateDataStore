@@ -9,7 +9,7 @@ def corrig_csv(arquino, colunas):
     df.to_csv(arquino, index=False)  
     return df
 
-def concat_csv_por_ano(data_inicio, data_fim, variaveis):
+def concat_csv_por_ano(data_inicio, data_fim, var):
     if isinstance(data_inicio, str):
         data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
     if isinstance(data_fim, str):
@@ -19,7 +19,7 @@ def concat_csv_por_ano(data_inicio, data_fim, variaveis):
     ano_de_fim = data_fim.year
 
     for ano in range(ano_de_inicio, ano_de_fim + 1):
-        arquivos_csv = glob.glob(f"data/{variaveis}/{ano}/csv/*.csv")
+        arquivos_csv = glob.glob(f"data/{var}/{ano}/csv/*.csv")
         if not arquivos_csv:
             continue
 
@@ -28,7 +28,7 @@ def concat_csv_por_ano(data_inicio, data_fim, variaveis):
         df_ano['date'] = pd.to_datetime(df_ano['date'])
         df_ano = df_ano.sort_values('date').reset_index(drop=True)
 
-        output_dir = f"data/{variaveis}/{ano}"
+        output_dir = f"data/{var}/{ano}"
         os.makedirs(output_dir, exist_ok=True)
         df_ano.to_csv(f"{output_dir}/all_data_{ano}.csv", index=False)
 

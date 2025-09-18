@@ -35,3 +35,6 @@ while true; do
     echo "[$DATE] Sincronização concluída. Aguardando ${INTERVAL}s..." | tee -a $LOG_FILE
     sleep $INTERVAL
 done
+
+
+# ssh -L 8080:localhost:8080 marcosmorais@177.105.35.229

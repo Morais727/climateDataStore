@@ -6,7 +6,7 @@ from faz_requisicao import faz_requisicao
 from dividir_requisicao import dividir_requisicao
 
 def main(data_inicio, data_fim, dataset, variaveis, area):
-    intervalos = dividir_requisicao(data_inicio, data_fim, variaveis)
+    intervalos = dividir_requisicao(data_inicio, data_fim)
 
     arq_caminhos = []
     for inicio, fim in intervalos:
@@ -20,8 +20,12 @@ def main(data_inicio, data_fim, dataset, variaveis, area):
         ano = ano_inicio
 
         # Produto cartesiano entre variáveis e datasets
-        for var, ds in itertools.product(variaveis, dataset):
-            arq_resultado = faz_requisicao(var, dia, mes, ano, horas, ds, area)
+        for var, ds, m in itertools.product(variaveis, dataset, mes):
+
+            print("\ndatasets:", ds)
+            print("\nvariaveis:", var)
+            print(f"\n>>> Requisitando dados para {var} de {data_inicio} até {data_fim}...")
+            arq_resultado = faz_requisicao(var, dia, m, ano, horas, ds, area)
             arq_caminhos.append(arq_resultado)
 
     return arq_caminhos
@@ -32,12 +36,16 @@ if __name__ == "__main__":
     parser.add_argument("--data_inicio", type=str, required=True, default="2024-01-01", help="Data de início da requisição (YYYY-MM-DD)")
     parser.add_argument("--data_fim", type=str, required=True, default="2024-01-01", help="Data de fim da requisição (YYYY-MM-DD)")
     parser.add_argument("--dataset", type=str, required=True, default="reanalysis-era5-land", help="Nome do dataset")
-    parser.add_argument("--variaveis", type=str, required=True, default='["2m_temperature"]', help="Lista de variáveis em formato JSON")
-    parser.add_argument("--area", type=str, required=False, default="None", help="Área geográfica em formato JSON")
+    parser.add_argument("--variaveis", type=str, required=True, default="['2m_temperature']", help="Lista de variáveis em formato JSON")
+    parser.add_argument("--area", type=str, required=False, default="['None']", help="Área geográfica em formato JSON")
 
     args = parser.parse_args()
 
+    datasets = json.loads(args.dataset)
     variaveis = json.loads(args.variaveis)
     area = json.loads(args.area)
 
-    main(args.data_inicio, args.data_fim, args.dataset, variaveis, area)
+    data_inicio = args.data_inicio
+    data_fim = args.data_fim
+    
+    main(data_inicio, data_fim, datasets, variaveis, area)

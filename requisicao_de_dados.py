@@ -22,7 +22,7 @@ def corrig_csv(arquino, colunas):
     df.to_csv(arquino, index=False)  
     return df
 
-def concat_csv_por_ano(data_inicio, data_fim, variaveis):
+def concat_csv_por_ano(data_inicio, data_fim, var):
     logging.info("Iniciando concatenação de CSVs por ano")
     if isinstance(data_inicio, str):
         data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
@@ -33,7 +33,7 @@ def concat_csv_por_ano(data_inicio, data_fim, variaveis):
     ano_de_fim = data_fim.year
 
     for ano in range(ano_de_inicio, ano_de_fim + 1):
-        arquivos_csv = glob.glob(f"data/{variaveis[0]}/{ano}/csv/*.csv")
+        arquivos_csv = glob.glob(f"data/{var}/{ano}/csv/*.csv")
         if not arquivos_csv:
             logging.warning(f"Nenhum arquivo CSV encontrado para o ano {ano}")
             continue
@@ -43,7 +43,7 @@ def concat_csv_por_ano(data_inicio, data_fim, variaveis):
         df_ano['date'] = pd.to_datetime(df_ano['date'])
         df_ano = df_ano.sort_values('date').reset_index(drop=True)
 
-        output_dir = f"data/{variaveis[0]}/{ano}"
+        output_dir = f"data/{var}/{ano}"
         os.makedirs(output_dir, exist_ok=True)
         df_ano.to_csv(f"{output_dir}/all_data_{ano}.csv", index=False)
         logging.info(f"Concatenação de CSVs concluída para o ano {ano} ({len(df_ano)} registros)")
@@ -57,16 +57,16 @@ def inicio_fim_nome(lista):
         return ""
     return f"{lista[0]}_{lista[-1]}"
 
-def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120_000):
+def verifica_limite_fields(data_inicio, data_fim, limite=120_000):
     if isinstance(data_inicio, str):
         data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
     if isinstance(data_fim, str):
         data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
     
     num_dias = (data_fim - data_inicio).days + 1  # +1 para incluir o último dia
-    num_variaveis = len(lista_variaveis)
+
     
-    total_fields = num_variaveis * num_dias * 24  # 24 horas fixas
+    total_fields = num_dias * 24  
 
     ultrapassa = total_fields > limite
     
@@ -75,22 +75,22 @@ def verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite=120_00
                 'ultrapassa_limite': ultrapassa
             }
 
-def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120_000):
+def dividir_requisicao(data_inicio, data_fim, var, limite=120_000):
     if isinstance(data_inicio, str):
         data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
     if isinstance(data_fim, str):
         data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
     
-    resultado = verifica_limite_fields(data_inicio, data_fim, lista_variaveis, limite)
+    resultado = verifica_limite_fields(data_inicio, data_fim, limite)
     total_fields = resultado['total_fields']
     ultrapassa = resultado['ultrapassa_limite']
     
     intervalos = []
     
     if ultrapassa:
-        max_days_per_request = limite // total_fields
-        if max_days_per_request < 1:
-            raise ValueError("Limite de fields muito baixo para o número de variáveis solicitado.")
+        num_dias = (data_fim - data_inicio).days + 1
+        fields_por_dia = max(total_fields // num_dias, 1)
+        max_days_per_request = max(limite // fields_por_dia, 1)  # garante pelo menos 1 dia
         
         atual_inicio = data_inicio
         while atual_inicio <= data_fim:
@@ -115,6 +115,7 @@ def dividir_requisicao(data_inicio, data_fim, lista_variaveis, limite=120_000):
     
     return intervalos
 
+
 def gera_anos(inicio, fim):
     return list(range(inicio, fim))
 
@@ -133,16 +134,16 @@ def gerar_horas(inicio, fim=None):
     else:
         return [f"{h:02d}:00" for h in range(inicio, fim - 1, -1)]
 
-def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
-    logging.info(f"Iniciando requisição: {dataset}, Variáveis: {variaveis}, Ano: {ano}, Mes: {mes[0]}-{mes[-1]}, Dias: {dia[0]}-{dia[-1]}, Horas: {horas[0]}-{horas[-1]}")
+def faz_requisicao(var, dia, mes, ano, horas, dataset=dataset):
+    logging.info(f"Iniciando requisição: {dataset}, Variáveis: {var}, Ano: {ano}, Mes: {mes[0]}-{mes[-1]}, Dias: {dia[0]}-{dia[-1]}, Horas: {horas[0]}-{horas[-1]}")
     
-    output_dir_base = f"data/{variaveis[0]}/{ano}"
+    output_dir_base = f"data/{var}/{ano}"
     os.makedirs(output_dir_base, exist_ok=True)
 
     client = cdsapi.Client()
     request = {
         "product_type": ["reanalysis"],
-        "variable": variaveis,
+        "variable": var,
         "year": ano,
         "month": mes,
         "day": dia,
@@ -155,12 +156,12 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
 
     dias_nome = inicio_fim_nome(dia)
     mes_nome = inicio_fim_nome(mes)
-    variaveis_nome = variaveis[0].replace("-", "_")
+    variavel_nome = var.replace("-", "_")
     dataset_nome = dataset.replace("-", "_")
     output_hourly = f"{output_dir_base}/hourly"
     os.makedirs(output_hourly, exist_ok=True)
 
-    nome_base = f'{dataset_nome}-{variaveis_nome}-{ano}-{mes_nome}-{dias_nome}'
+    nome_base = f'{dataset_nome}-{variavel_nome}-{ano}-{mes_nome}-{dias_nome}'
     target = f"{output_hourly}/{nome_base}.grib"
 
     logging.info(f"Baixando arquivo: {target}")
@@ -170,10 +171,10 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
     
     
     
-    if variaveis[0] == "2m_temperature":
+    if var == "2m_temperature":
         medida = "celsius"
         unidade = "degC"
-    elif variaveis[0] == "total_precipitation":
+    elif var == "total_precipitation":
         medida = "milimetros"
         unidade = "mm"
     
@@ -182,31 +183,31 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
     variaveis_arq = [v.strip() for v in resultado.stdout.splitlines() if v.strip()]
 
     
-    if variaveis[0] == "2m_temperature":
-        expr = f'{variaveis_arq[0]}={variaveis_arq[0]}-273.15'
+    if var == "2m_temperature":
+        expr = f'{var}={var}-273.15'
         cmd_convert = f"cdo expr,'{expr}' {target} {output_medida}"
         subprocess.run(cmd_convert, shell=True, check=True)
-        logging.info(f"Conversão para Celsius concluída:{variaveis_arq[0]}")
-    elif variaveis[0] == "total_precipitation":
-        # expr = f'{variaveis_arq[0]}={variaveis_arq[0]}*1000'
+        logging.info(f"Conversão para Celsius concluída:{var}")
+    elif var == "total_precipitation":
+        # expr = f'{var}={var}*1000'
         # cmd_convert = f"cdo expr,'{expr}' {target} {output_medida}"
         cmd_convert = f"cdo mulc,1000 {target} {output_medida}"
         subprocess.run(cmd_convert, shell=True, check=True)
-        logging.info(f"Conversão para milímetros concluída: {variaveis_arq[0]}")
+        logging.info(f"Conversão para milímetros concluída: {var}")
 
     input_medida = output_medida
     output_medida = output_medida.replace(f"{medida}.grib", f"{medida}-units.grib")
-    cmd_units = f"cdo -setattribute,{variaveis_arq[0]}@units={unidade} {input_medida} {output_medida}"
+    cmd_units = f"cdo -setattribute,{var}@units={unidade} {input_medida} {output_medida}"
     subprocess.run(cmd_units, shell=True, check=True)
 
     output_daily = f'{output_dir_base}/daily'
     os.makedirs(output_daily, exist_ok=True)
 
-    if variaveis[0] == "2m_temperature":
+    if var == "2m_temperature":
         cmd_daymean = f"cdo -daymean -shifttime,-1sec {output_medida} {output_daily}/{nome_base}-daily.grib"
         subprocess.run(cmd_daymean, shell=True, check=True)
         logging.info("Cálculo daily mean concluído")
-    elif variaveis[0] == "total_precipitation":
+    elif var == "total_precipitation":
         cmd_daymax = f"cdo daymax {output_medida} {output_daily}/{nome_base}-daily-max.grib"
         subprocess.run(cmd_daymax, shell=True, check=True)
         logging.info("Cálculo daily max concluído")
@@ -236,10 +237,10 @@ def faz_requisicao(variaveis, dia, mes, ano, horas, dataset=dataset):
     corrig_csv(arq_entrada, colunas)
     logging.info(f"Arquivo CSV corrigido")
 
-def main(data_inicio, data_fim):
+def main(data_inicio, data_fim, var):
     logging.info("Início do script")
-    
-    intervalos = dividir_requisicao(data_inicio, data_fim, variaveis)
+
+    intervalos = dividir_requisicao(data_inicio, data_fim, var)
     for inicio, fim in intervalos:
         dia_inicio = inicio.day
         mes_inicio = inicio.month
@@ -254,14 +255,14 @@ def main(data_inicio, data_fim):
         horas = gerar_horas("dia")
         ano = ano_inicio
 
-        faz_requisicao(variaveis, dia, mes, ano, horas)
+        faz_requisicao(var, dia, mes, ano, horas)
 
-    concat_csv_por_ano(data_inicio, data_fim, variaveis)
+    concat_csv_por_ano(data_inicio, data_fim, var)
 
     logging.info("Fim do script")
 
 if __name__ == "__main__":
-    data_inicio = "2024-01-01"
+    data_inicio = "1994-01-01"
     data_fim = "2025-06-01"
-
-    main(data_inicio, data_fim)
+    for var in variaveis:
+        main(data_inicio, data_fim, var)
