@@ -1,6 +1,6 @@
 # Guia Prático para Uso da API do ERA5
 
-## 📌 Introdução
+## Introdução
 
 Este guia explica, de forma clara e prática, como usar a API do **ERA5** através do **Climate Data Store (CDS)**.  
 O ERA5 é um dos principais conjuntos de dados climáticos globais, usado em pesquisas e aplicações de meteorologia, meio ambiente e ciência de dados.
@@ -10,7 +10,7 @@ A seguir, explicamos o que é o ERA5, como funciona a API, seus limites e como o
 
 ---
 
-## 🌍 1. O que é o ERA5?
+## 1. O que é o ERA5?
 
 O **ERA5** é a quinta geração de reanálises climáticas do **ECMWF** (Centro Europeu de Previsões Meteorológicas a Médio Prazo).
 
@@ -23,7 +23,7 @@ O resultado é um **banco de dados global, consistente e detalhado**, com inform
 
 ---
 
-## 💻 2. Como funciona o repositório `climateDataStore`
+## 2. Como funciona o repositório `climateDataStore`
 
 O código do repositório segue um fluxo simples e eficiente:
 
@@ -32,7 +32,7 @@ O código do repositório segue um fluxo simples e eficiente:
 3. **Download**: os dados são salvos em um arquivo `.nc` (NetCDF).
 4. **Tratamento**: o arquivo é aberto no Python com `xarray` e convertido para formatos mais fáceis (como `.csv`).
 
-## ⚙️ Instalação
+## Instalação
 
 É altamente recomendável utilizar um **ambiente virtual** para este projeto, garantindo que as dependências fiquem isoladas de outras instalações do sistema.
 
@@ -46,15 +46,17 @@ pyenv virtualenv 3.10.14 climate_env
 
 # ativar o ambiente
 pyenv activate climate_env
-Agora todos os pacotes serão instalados dentro desse ambiente.
 ```
+
+Agora todos os pacotes serão instalados dentro desse ambiente.
+
 
 ## Instalando dependências Python
 
 Com o ambiente ativo, instale os pacotes listados em requirements.txt:
 
 ```bash
-pip install -r utils/requirements.txt
+pip install -r 1-requirements.txt
 ```
 
 ## Principais bibliotecas utilizadas:
@@ -81,7 +83,7 @@ sudo apt-get install cdo
 
 ---
 
-## 🔑 3. Como usar a API
+## 3. Como usar a API
 
 ### 3.1 Autenticação
 
@@ -96,7 +98,7 @@ sudo apt-get install cdo
 
 ---
 
-## ⚠️ 4. Limitações da API
+## 4. Limitações da API
 
 ### 4.1 Tamanho máximo por requisição
 
@@ -145,11 +147,11 @@ Se passar disso, a requisição falha com `"Request too large"`.
 | ERA5-Land    | ~12.000/mês      | Semelhante ao ERA5 mensal, limitado ao dataset de superfície terrestre.                                                               |
 
 **Exemplo prático:**
-👉 Isso mostra por que o limite de fields é maior no horário do que no mensal: os dados horários são “crus” e fáceis de empacotar, enquanto os mensais já vêm calculados e exigem processamento extra.
+ Isso mostra por que o limite de fields é maior no horário do que no mensal: os dados horários são “crus” e fáceis de empacotar, enquanto os mensais já vêm calculados e exigem processamento extra.
 
 ---
 
-## ✅ 5. Boas práticas
+## 5. Boas práticas
 
 1. **Use a interface web do CDS**
 
@@ -168,7 +170,7 @@ Se passar disso, a requisição falha com `"Request too large"`.
 
 ---
 
-## 🐍 6. Integração no Python
+## 6. Integração no Python
 
 Depois do download (`output.nc`):
 
@@ -185,7 +187,7 @@ mean_temp = ds["t2m"].mean(dim="time")
 df = ds.to_dataframe().reset_index()
 ```
 
-## 🔄 7. Conversão de dados (NetCDF → CSV)
+## 7. Conversão de dados (NetCDF → CSV)
 
 É possível converter arquivos `.nc` para `.csv` utilizando ferramentas como `xarray`, `pandas` ou `cdo`.  
 Na prática, essa conversão é viável para **conjuntos pequenos ou médios**, mas **pode se tornar inviável em datasets muito grandes**:
@@ -194,7 +196,7 @@ Na prática, essa conversão é viável para **conjuntos pequenos ou médios**, 
 - Um único mês global em resolução horária pode gerar **bilhões de linhas** ao ser convertido para CSV.
 - O tamanho final do `.csv` pode facilmente chegar a **dezenas ou centenas de GB**, tornando o processamento lento e difícil de manipular.
 
-👉 **Recomendações práticas:**
+ **Recomendações práticas:**
 
 - Trabalhar diretamente no formato **NetCDF** (com `xarray`) ou em **Zarr** (otimizado para leitura sob demanda).
 - Converter para **CSV** apenas quando for **um ponto específico (lat/lon)** ou um conjunto pequeno de estatísticas (ex: médias regionais, séries temporais em cidades).
@@ -227,7 +229,7 @@ Após avaliar as ferramentas, verificou-se que o **xarray é mais flexível, int
   - Arquivo **NetCDF** (`daily_cdo_celsius.nc`): **14,1 MB**
   - Ou seja, o **NetCDF é cerca de 7,5× mais compacto**, além de manter metadados e estrutura multidimensional.
 
-📊 **Resumo da comparação:**
+ **Resumo da comparação:**
 
 | Critério           | xarray (Python)  | cdo (externo)                           |
 | ------------------ | ---------------- | --------------------------------------- |
