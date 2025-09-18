@@ -203,7 +203,7 @@ Na prática, essa conversão é viável para **conjuntos pequenos ou médios**, 
 
 ---
 
-### ⚡ Comparação entre `xarray` e `cdo`
+### Comparação entre `xarray` e `cdo`
 
 Após avaliar as ferramentas, verificou-se que o **xarray é mais flexível, integrado ao Python e mais eficiente** que o `cdo` em tarefas de manipulação e conversão:
 
@@ -241,6 +241,48 @@ Após avaliar as ferramentas, verificou-se que o **xarray é mais flexível, int
 | Tamanho NetCDF     | 14,1 MB          | —                                       |
 
 ---
+
+## 8. Gerenciamento de Requisições com Airflow
+
+Estamos utilizando o **Apache Airflow** para gerenciar o fluxo de requisição de dados climáticos do **ERA5**.  
+
+Criamos uma **DAG** dedicada exclusivamente às requisições, estruturada para:  
+- Realizar o processo **mês a mês** (seguindo as boas práticas recomendadas, evitando requisições muito grandes).  
+- Garantir maior velocidade e confiabilidade no download dos dados.  
+
+---
+
+## Estrutura de diretórios
+
+Os dados são organizados no seguinte padrão:
+
+data/
+└── variavel_de_interesse/
+└── ano/
+└── arquivos_de_dados.grib
+
+- Para cada mês, será gerado um arquivo `.grib`.  
+- Posteriormente, esses arquivos serão tratados e agregados em um único arquivo consolidado.  
+
+---
+
+## Execução em servidor remoto
+
+O processo de requisição e tratamento roda em um **servidor remoto**.  
+Para acompanhar a interface do **Airflow** em sua máquina local, utilizamos **túnel SSH** redirecionando a porta **8080** do servidor para a máquina local.
+
+### Comando:
+
+```bash
+ssh -L 8080:localhost:8080 usuario@ip_servidor
+```
+
+Após executar esse comando, basta acessar no navegador:
+
+http://localhost:8080
+e você verá a interface do Airflow rodando no servidor remoto.
+
+
 
 ## Data citation
 
