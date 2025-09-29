@@ -6,3 +6,8 @@ cdo daymean -mergetime input_1.grib input_2.grib output.grib
 cdo outputtab,date,lon,lat,value input.nc | tr -s ' ' ',' > maneira_burra/usa_cdo/2m_temperature/reanalysis_era5_land-2m_temperature-2024-01_12-01_31-celsius-units-daymean-box.csv
 
 criar código para pegar o ponto mais próximo do ponto de interesse.
+
+
+
+
+cdo -s infon data/teste_reanalysis_era5_land_jan_2024.grib  // Comando para ver informações gerais do arquivo

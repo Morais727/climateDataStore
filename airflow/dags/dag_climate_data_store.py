@@ -11,8 +11,8 @@ PARAMS = {
     "data_inicio": "1994-01-01",
     "data_fim": "2025-06-01",
     "dataset": [
-                    "reanalysis-era5-land", 
-                    "reanalysis-era5-single-levels"
+                    "reanalysis-era5-single-levels",
+                    "reanalysis-era5-land",                     
                 ],
     "variaveis": [
                     "2m_dewpoint_temperature",
